@@ -82,89 +82,47 @@ void setup() {
   TIMSK1 |= (1 << OCIE1A);  // Enable timer compare interrupt
   sei();                    //interrupts();
 }
+
 byte counter = 0;
+
+// Interrupt routine
 ISR(TIMER1_COMPA_vect) {
-  handleClocks();
-}
-
-inline void updateClockParameters() {
-  // Read all potentiometers and update clock parameters
-
-  // Read frequency potentiometer (0-10Hz)
-  unsigned int freqRaw = analogRead(FREQ_POTS[0]);
-
-  // Read length potentiometer (0-100% of period)
-  unsigned int lengthRaw = analogRead(LENGTH_POTS[0]);
-
-  // For clock 1, apply CV modulation
-
-  // Read CV inputs
-  unsigned int freqCV = analogRead(CV_FREQ);
-  unsigned int lengthCV = analogRead(CV_LENGTH);
-
-  // Apply modulation (here using 50% modulation depth)
-  freqRaw += freqCV;
-  lengthRaw = constrain(lengthRaw - lengthCV, 0, 1023);
-
-  // the for-loop which could be here is unrolled for optimization, at least it saves one if
-
-  clocks[0].clockInc = freqRaw + 1;
-  clocks[0].durInc = lengthRaw + 1;
-
-  // check for the random mode switch
-  clocks[0].randomMode = digitalRead(clocks[0].modePin) == LOW ? true : false;  // switch is inverted, using internal pullup
-
-  // clock 2
-  freqRaw = analogRead(FREQ_POTS[1]);
-  lengthRaw = analogRead(LENGTH_POTS[1]);
-  clocks[1].clockInc = freqRaw + 1;
-  clocks[1].durInc = lengthRaw + 1;
-  clocks[1].randomMode = digitalRead(clocks[1].modePin) == LOW ? true : false;
-
-  // clock 3
-  freqRaw = analogRead(FREQ_POTS[2]);
-  lengthRaw = analogRead(LENGTH_POTS[2]);
-  clocks[2].clockInc = freqRaw + 1;
-  clocks[2].durInc = lengthRaw + 1;
-  clocks[2].randomMode = digitalRead(clocks[2].modePin) == LOW ? true : false;
-}
-
-inline void handleClocks() {
 
   ++clockCounter;
   if (clockCounter > 1) {
     clockCounter = 0;
-    if (clocks[0].randomMode == true) {
 
-      clocks[0].clockCount += clocks[0].clockInc;
-      if (clocks[0].clockCount > 50000) {
-        unsigned int randomValue = random(1000);
-        if (randomValue > 500){
-            clocks[0].state = true;
-            digitalWrite(clocks[0].outputPin, HIGH);
-            digitalWrite(clocks[0].ledPin, HIGH);
-            clocks[0].durCount = 0;
+    for (byte currentClock = 0; currentClock < 3; ++currentClock) {
+      clocks[currentClock].clockCount += clocks[currentClock].clockInc;
+      if (clocks[currentClock].randomMode == true) {
+        if (clocks[currentClock].clockCount > 50000) {
+          unsigned int randomValue = random(1000);
+          if (randomValue > 500) {
+            clocks[currentClock].state = true;
+            digitalWrite(clocks[currentClock].outputPin, HIGH);
+            digitalWrite(clocks[currentClock].ledPin, HIGH);
+            clocks[currentClock].durCount = 0;
           }
-          clocks[0].clockCount = 0;
+          clocks[currentClock].clockCount = 0;
+        }
+      } else {
+        if (clocks[currentClock].clockCount > 50000) {
+          clocks[currentClock].state = true;
+          digitalWrite(clocks[currentClock].outputPin, HIGH);
+          digitalWrite(clocks[currentClock].ledPin, HIGH);
+          clocks[currentClock].clockCount = 0;
+          clocks[currentClock].durCount = 0;
+        }
       }
-    } else {
-      clocks[0].clockCount += clocks[0].clockInc;
-      if (clocks[0].clockCount > 50000) {
-        clocks[0].state = true;
-        digitalWrite(clocks[0].outputPin, HIGH);
-        digitalWrite(clocks[0].ledPin, HIGH);
-        clocks[0].clockCount = 0;
-        clocks[0].durCount = 0;
-      }
-    }
-  }
 
-  if (clocks[0].state == true) {
-    clocks[0].durCount += clocks[0].durInc;
-    if (clocks[0].durCount > 32768) {
-      clocks[0].state = false;
-      digitalWrite(clocks[0].outputPin, LOW);
-      digitalWrite(clocks[0].ledPin, LOW);
+      if (clocks[currentClock].state == true) {
+        clocks[currentClock].durCount += clocks[0].durInc;
+        if (clocks[currentClock].durCount > 32768) {
+          clocks[currentClock].state = false;
+          digitalWrite(clocks[currentClock].outputPin, LOW);
+          digitalWrite(clocks[currentClock].ledPin, LOW);
+        }
+      }
     }
   }
 }
@@ -172,7 +130,45 @@ inline void handleClocks() {
 void loop() {
   counter++;
   if (counter = 10) {
-    updateClockParameters();
+    // Read all potentiometers and update clock parameters
+
+    // Read frequency potentiometer (0-10Hz)
+    unsigned int freqRaw = analogRead(FREQ_POTS[0]);
+
+    // Read length potentiometer (0-100% of period)
+    unsigned int lengthRaw = analogRead(LENGTH_POTS[0]);
+
+    // For clock 1, apply CV modulation
+
+    // Read CV inputs
+    unsigned int freqCV = analogRead(CV_FREQ);
+    unsigned int lengthCV = analogRead(CV_LENGTH);
+
+    // Apply modulation (here using 50% modulation depth)
+    freqRaw += freqCV;
+    lengthRaw = constrain(lengthRaw - lengthCV, 0, 1023);
+
+    // the for-loop which could be here is unrolled for optimization, at least it saves one if
+
+    clocks[0].clockInc = freqRaw + 1;
+    clocks[0].durInc = lengthRaw + 1;
+
+    // check for the random mode switch
+    clocks[0].randomMode = digitalRead(clocks[0].modePin) == LOW ? true : false;  // switch is inverted, using internal pullup
+
+    // clock 2
+    freqRaw = analogRead(FREQ_POTS[1]);
+    lengthRaw = analogRead(LENGTH_POTS[1]);
+    clocks[1].clockInc = freqRaw + 1;
+    clocks[1].durInc = lengthRaw + 1;
+    clocks[1].randomMode = digitalRead(clocks[1].modePin) == LOW ? true : false;
+
+    // clock 3
+    freqRaw = analogRead(FREQ_POTS[2]);
+    lengthRaw = analogRead(LENGTH_POTS[2]);
+    clocks[2].clockInc = freqRaw + 1;
+    clocks[2].durInc = lengthRaw + 1;
+    clocks[2].randomMode = digitalRead(clocks[2].modePin) == LOW ? true : false;
   }
   // Small delay to prevent loop from running too fast
   delayMicroseconds(100);
