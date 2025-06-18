@@ -1,5 +1,5 @@
 /*
-b4ClockworksII module firmware
+b4ClockworksII module firmware for Arduino Nano
 Copyright (C) 2025 Malte Steiner
 
 This program is free software: you can redistribute it and/or modify
@@ -142,6 +142,7 @@ inline void handleClocks() {
         if (randomValue > 500){
             clocks[0].state = true;
             digitalWrite(clocks[0].outputPin, HIGH);
+            digitalWrite(clocks[0].ledPin, HIGH);
             clocks[0].durCount = 0;
           }
           clocks[0].clockCount = 0;
@@ -151,6 +152,7 @@ inline void handleClocks() {
       if (clocks[0].clockCount > 50000) {
         clocks[0].state = true;
         digitalWrite(clocks[0].outputPin, HIGH);
+        digitalWrite(clocks[0].ledPin, HIGH);
         clocks[0].clockCount = 0;
         clocks[0].durCount = 0;
       }
@@ -162,6 +164,7 @@ inline void handleClocks() {
     if (clocks[0].durCount > 32768) {
       clocks[0].state = false;
       digitalWrite(clocks[0].outputPin, LOW);
+      digitalWrite(clocks[0].ledPin, LOW);
     }
   }
 }
