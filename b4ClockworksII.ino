@@ -22,8 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Pin Definitions
 const byte CLOCK_OUTPUTS[3] = { 9, 10, 11 };  // Digital outputs for the 3 clocks
-const byte FREQ_POTS[3] = { A0, A1, A2 };     // Analog inputs for frequency control
-const byte LENGTH_POTS[3] = { A3, A4, A5 };   // Analog inputs for gate length control
+const byte FREQ_POTS[3] = { A0, A2, A4 };     // Analog inputs for frequency control
+const byte LENGTH_POTS[3] = { A1, A3, A5 };   // Analog inputs for gate length control
 const byte CV_FREQ = A6;                      // CV input for frequency modulation (clock 1)
 const byte CV_LENGTH = A7;                    // CV input for gate length modulation (clock 1)
 const byte LED_PINS[3] = { 2, 3, 4 };         // LEDs for clocks 1-3
@@ -116,7 +116,7 @@ ISR(TIMER1_COMPA_vect) {
       }
 
       if (clocks[currentClock].state == true) {
-        clocks[currentClock].durCount += clocks[0].durInc;
+        clocks[currentClock].durCount += clocks[currentClock].durInc;
         if (clocks[currentClock].durCount > 32768) {
           clocks[currentClock].state = false;
           digitalWrite(clocks[currentClock].outputPin, LOW);
@@ -145,6 +145,7 @@ void loop() {
     unsigned int lengthCV = analogRead(CV_LENGTH);
 
     // Apply modulation (here using 50% modulation depth)
+    freqRaw>>=1;
     freqRaw += freqCV;
     lengthRaw = constrain(lengthRaw - lengthCV, 0, 1023);
 
@@ -159,14 +160,14 @@ void loop() {
     // clock 2
     freqRaw = analogRead(FREQ_POTS[1]);
     lengthRaw = analogRead(LENGTH_POTS[1]);
-    clocks[1].clockInc = freqRaw + 1;
+    clocks[1].clockInc = freqRaw + 2;
     clocks[1].durInc = lengthRaw + 1;
     clocks[1].randomMode = digitalRead(clocks[1].modePin) == LOW ? true : false;
 
     // clock 3
     freqRaw = analogRead(FREQ_POTS[2]);
     lengthRaw = analogRead(LENGTH_POTS[2]);
-    clocks[2].clockInc = freqRaw + 1;
+    clocks[2].clockInc = freqRaw + 2;
     clocks[2].durInc = lengthRaw + 1;
     clocks[2].randomMode = digitalRead(clocks[2].modePin) == LOW ? true : false;
   }
